@@ -1,0 +1,14 @@
+citHeader("To cite package 'PathNet' in publications use:")
+
+citEntry(entry="article",
+    title = "PathNet: A tool for pathway analysis using topological information.",
+    author = "Dutta B, Wallqvist A, and Reifman J.",
+    journal = "Source Code for Biology and Medicine",
+    year = "2012",
+    volume  = "7",
+    number =  "1",
+    pages ="10",
+    textVersion = paste("Dutta B, Wallqvist A, and Reifman J.",
+        "PathNet: A tool for pathway analysis using topological information.",
+        "Source Code for Biology and Medicine 2012 Sep 24;7(1):10.")
+    )

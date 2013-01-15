@@ -1,0 +1,200 @@
+\documentclass{article}
+
+%\VignetteIndexEntry{PathNet}
+\title{PathNet: A tool for finding pathway enrichment and pathway cross-talk using topological information and gene expression data}
+\author{Bhaskar Dutta, Anders Wallqvist, and Jaques Reifman}
+\date{}
+
+\begin{document}
+\maketitle
+
+\SweaveOpts{concordance=TRUE}
+<<options, echo=FALSE>>=
+options(width=60, continue=" ")
+set.seed(123)
+@
+
+
+\begin{centering}
+{
+DoD Biotechnology HPC Software Applications Institute \\
+Telemedicine and Advanced Technology Research Center \\
+U.S. Army Medical Research and Materiel Command \\
+Ft. Detrick, MD 21702, USA \\
+}
+\end{centering}
+
+
+\section{Overview}
+The \underline{Path}way analysis using \underline{Net}work information (PathNet) algorithm, described in Dutta \emph{et al.}, is described here. PathNet uses topological information present in pathways and differential expression levels of genes, obtained from microarray experiments, to identify pathways that are 1) significantly enriched and 2) associated in the context of gene expression data. In enrichment analysis, PathNet considers both the differential expression of genes and their pathway neighbors to strengthen the evidence that a pathway is implicated in the biological conditions characterizing the experiment. In addition, PathNet uses the connectivity of the differentially expressed genes among all pathways to score pathway contextual associations and statistically identify biological relations among pathways. 
+
+
+\section{Datasets used in PathNet}
+
+The PathNet program for enrichment and contextual analysis require the following types of input data: 1) differential expression levels (i.e., direct evidence), 2) interactions between any pair of genes captured in an adjacency matrix (A), and 3) pathway information. We have included test data in the \texttt{PathNetData} package. The formats of each of the input data types are explained in detail in the following sections and users can load their input data following the descriptions provided in section 2.1.
+
+\begin{figure}
+  \centering
+  \includegraphics{PathNet_IO.png}
+  \caption{A schematic representation of inputs and outputs of PathNet.}
+\end{figure}
+
+
+To illustrate the utility of PathNet, we applied it to two microarray datasets measuring gene expressions of Alzheimer's disease (AD) patients. Both of these datasets were downloaded from NCBI Gene Expression Omnibus (GEO) database. The first dataset (GEO ID: GDS810) was used to examine the expression profile of genes from the hippocampal region of brain as a function of progression of the disease. Hence, this dataset was referred to as the \emph{disease progression dataset}. The second dataset (GEO ID: GSE5281) was used to examine effect of AD in six different brain regions: entorhinal cortex (EC), hippocampus (HIP), middle temporal gyrus (MTG), posterior cingulate cortex (PC), superior frontal gyrus (SFG), and primary visual cortex (VCX). Hence, this dataset was referred to as the \emph{brain regions dataset}.
+
+The direct evidence, i.e., association of each gene with the disease, was calculated by comparing gene expression data in control patients with diseased patients. Here, we used t-test to identify the significance of association (p-value) of each gene with the disease. Other tests such as ANOVA and SAM can also be used to calculate significance of association. If multiple probes were present corresponding to a gene, the probe with the minimum p-value was selected. The negative $log_{10}$ transformed p-value of the significance of association was used as direct evidence. In the \emph{disease progression dataset}, we compared the gene expression from incipient, moderate, and severe samples with control samples. Similarly, for the \emph{brain regions dataset}, we compared the gene expression from each of the six brain regions with corresponding control samples. Hence, for each gene, we generated three and six sets of direct evidences (corresponding to each comparison) from the \emph{disease progression} and \emph{brain regions datasets}, respectively.
+
+To install the PathNet packages, start R and enter:
+
+<<Install biocLite packages, eval = FALSE>>=
+source("http://bioconductor.org/biocLite.R")
+biocLite("PathNet")
+biocLite("PathNetData")
+@
+
+
+The following commands load the PathNet packages, which include the PathNet program, and the PathNetData library containing direct evidences from \emph{disease progression} and \emph{brain regions datasets}, adjacency matrix and pathway information. If users want use a different microarray data or pathway database for PathNet analysis, they need to create the input files in the same format. Commands for loading new data files are provided in the section 2.1. Hence, before running the program, we provided an overview of the data formats.
+
+<<Import Package and show Disease Progression>>=
+library("PathNet")
+library("PathNetData")
+data(disease_progression)
+head(disease_progression)
+@
+
+The first column contains the NCBI Entrez Gene ID. The next three columns contain direct evidences for three different stages of the disease. Similarly the \emph{brain regions dataset} is loaded using the following commands:
+
+<<Show Brain Regions>>=
+data(brain_regions)
+head(brain_regions)
+@
+
+In the current version of the program, we used regulatory pathways from the Kyoto Encyclopedia of Genes and Genomes (KEGG) database. KEGG Markup Language files containing pathway information were downloaded from the KEGG server (in November 2010) and were converted to text files. All the pathways were combined to create a pooled pathway. The connectivity information among genes in the pooled pathway was represented by the adjacency matrix $(A)$. $A$ is a square matrix with the number of rows (and columns) equal to number of genes in the pooled pathway. The element at the $i^th$ row and $j^{th}$ column of $A$ indicates if there exists an edge from gene $i$ to gene $j$ (equal to 1 if there is an edge and equal to 0 otherwise). The row names (first element of each row) correspond to the gene IDs. The rest of the matrix is comprised of zeros and ones.
+
+<<Show Adjacency Matrix>>=
+data(A)
+# Load genes from direct evidence 
+gene_ID <- brain_regions[,1]
+# Construct adjacency matrix
+A <- A [rownames(A) %in% gene_ID, rownames(A) %in% gene_ID]
+# Display a sample of the adjacency matrix contents
+A [100:110,100:110]
+@
+
+The pathway is loaded in this section. Each row in the pathway data represents an edge in the pooled pathway. The first column is the row index. The second and third columns denote the gene IDs connected by an edge in the pathway. The fourth column contains the name of the pathway where the edge is present.
+
+<<Show pathway>>=
+data(pathway)
+pathway[965:975,]
+@
+
+\subsection{Custom User Datasets}
+Users can create input text files to create data for the dataset formats described above. The PathNetData library is distributed with text files representations of these datasets to serve as a reference when creating new datasets for analysis.
+
+Text file based datasets can be loaded using the following commands:
+
+<<Show custom loading, eval = TRUE, term=FALSE>>=
+# We use system.file to locate the directory with the
+# example text files from the PathNetData Package
+current <- getwd()
+setwd(system.file(dir="extdata", package="PathNetData"))
+
+# Begin loading datasets from the text files
+brain_regions <- as.matrix(read.table(
+  file = "brain_regions_data.txt", sep = "\t", header = T))
+
+disease_progression <- as.matrix(read.table(
+  file = "disease_progression_data.txt", sep = "\t", header = T))
+
+A <- as.matrix(read.table(
+  file = "adjacency_data.txt", sep = "\t", header = T))
+
+pathway <- read.table(
+  file = "pathway_data.txt", sep = "\t", header = T) 
+
+# Change back to our previous working directory
+setwd(current)
+@
+
+
+\section{Running PathNet for enrichment analysis}
+
+The following command runs the PathNet program for enrichment analysis:
+
+<<Enrichment Analysis, eval = TRUE, results=hide>>=
+# Note we use a subset of evidence and a small number of
+# permutations for demonstration purposes
+results <- PathNet(Enrichment_Analysis = TRUE, 
+        DirectEvidence_info = brain_regions[1:2000,], 
+        Adjacency = A, 
+        pathway = pathway, 
+        Column_DirectEvidence = 7,
+        n_perm = 10, threshold = 0.05) 
+@
+
+
+Run-time of enrichment analysis program on a desktop computer (specifications: Intel Core i7 870, 8GB RAM, Windows 7 64-bit) was around 4 minutes. For enrichment analysis, the parameter \texttt{Enrichment\_Analysis} should be set to \texttt{TRUE}. The default value of this parameter is set to \texttt{FALSE}, which causes PathNet to not perform enrichment analysis of the pathways and instead consider all of the specified pathways. The next parameter, \texttt{DirectEvidence\_info}, provides the direct evidence data. Users always have to provide this data; else, the program will not proceed. In the \texttt{DirectEvidence\_info}, the first column should always contain the gene ID. If multiple biological comparisons are performed from the same dataset, direct evidence values corresponding to each of the comparisons can be appended as separate columns. For example, in the brain regions dataset, gene expressions were analyzed for six different brain regions, i.e., EC, HIP, MTG, PC, SFG, and VCX. Hence, the \texttt{DirectEvidence\_info} contains seven columns, where the first column contains the gene IDs and the next six columns contain the direct evidences corresponding to six brain regions. In our example, as we used direct evidence from VCX brain region, \texttt{Column\_DirectEvidence} was set to 7. The Adjacency and pathway parameters provide names of the adjacency matrix and pathway. These are organism-specific information obtained from the KEGG database. The \texttt{n\_perm} parameter sets the number of permutations and the default value is 2000. The last parameter, \texttt{threshold}, is the p-value cutoff used to identify differentially expressed genes. 
+
+The results from the PathNet enrichment analysis are included in the \texttt{enrichment\_results} and \texttt{enrichment\_combined\_evidence} list values PathNet returns. Significance levels of enrichment for each pathway from PathNet and the hypergeometric test are included in the  \texttt{enrichment\_results} matrix described in the format discussed below. The \texttt{enrichment\_combined\_evidence} matrix contains gene ID, direct, indirect, and combined evidence levels of genes present in the microarray data. Indirect evidences are calculated only for the genes that are present in the KEGG pathway and have at least one edge. For rest of the genes, indirect evidences are ``NA'' and the combined evidences are replaced by the direct evidences.  
+
+The following are the results generated by the demonstration PathNet program from the enrichment analysis:
+
+% Verify results with this file
+%Enrichment_result <- read.table("PathNet_enrichment_results.txt",sep = "\t")
+%Enrichment_result[1:10,]
+<<Enrichment Results, eval = TRUE>>=
+# Retrieve the first ten entrichment results
+results$enrichment_results[1:10,]
+
+# Retrieve the first ten combined evidence entries
+results$enrichment_combined_evidence[1:10,]
+@
+
+The enrichment results are sorted in increasing order based on the calculated values in the \texttt{p\_PathNet\_FWER} column. Results include pathway name (\texttt{Name}), number of genes of the pathway present in the microarray data (\texttt{No\_of\_Genes}), number of genes significant from direct evidence (\texttt{Sig\_Direct}), number of genes significant from combined evidence (\texttt{Sig\_Combi}), significance of enrichment from hypergeometric test (\texttt{p\_Hyper}), family wise error rate correction of \texttt{p\_Hyper} (\texttt{p\_Hyper\_FWER}), significance of enrichment from PathNet (\texttt{p\_PathNet}), family wise error rate correction of \texttt{p\_PathNet} (\texttt{p\_PathNet\_FWER}). We used the calculated \texttt{p\_PathNet\_FWER} values in our manuscript, and we recommend users to use \texttt{p\_PathNet\_FWER} as well.
+
+
+\section{Contextual analysis between pathways using PathNet}
+
+We introduced a new concept of contextual association between pathways, i.e., pathway connections that are influenced by differential gene expression of neighboring genes rather than just the static overlap of genes. Contrary to the static overlap, these associations are specific to and dependent on the biological conditions of the study. These calculations identify pathway pairs where differentially expressed genes linked to each other are present at a greater frequency than would be expected by chance alone.
+
+For contextual analysis the \texttt{PathNet} program uses the same datasets, i.e., direct evidence, adjacency matrix from the pooled pathway, and pathway file. For contextual analysis, \texttt{Contextual\_Analysis} should be set to \texttt{TRUE}. The rest of the inputs are also the same. Contextual analysis can be carried out in conjunction or independent of enrichment analysis by setting the \texttt{Enrichment\_Analysis} to \texttt{TRUE}. While carrying out contextual analysis in conjunction with enrichment analysis, users have an option to select only the significant pathways for contextual analysis by setting \texttt{use\_sig\_pathways} parameter to \texttt{TRUE}. When \texttt{use\_sig\_pathways} parameter is set to \texttt{FALSE}, contextual analysis between all possible pathway pairs are calculated. Run-time of contextual analysis program depends on the number of pathways used for contextual analysis. When all pathways were used, the run-time of the program on a desktop computer (specifications: Intel Core i7 870, 8GB RAM, Windows 7 64-bit) was around 2 hours.
+
+
+<<Contextual analysis, eval = TRUE>>=
+# Perform a contextual analysis with pathway enrichment
+# Note we use a subset of evidence and a small number of
+# permutations for demonstration purposes
+results <- PathNet(Enrichment_Analysis = FALSE, 
+        Contextual_Analysis= TRUE, 
+        DirectEvidence_info = brain_regions[1:500,], 
+        Adjacency = A, 
+        pathway = pathway, 
+        Column_DirectEvidence = 7, 
+        use_sig_pathways = FALSE, 
+        n_perm = 10, threshold = 0.05)
+@
+
+
+The results of the contextual analysis are stored in two different matrices returned in the PathNet result list, named \texttt{conn\_p\_value} and \texttt{pathway\_overlap}. The first matrix contains the results of the contextual association in the form of a square matrix, where the number of rows (and columns) is equal to the number of pathways. The element at the $i^{th}$ row and $j^{th}$ column denotes the significance of contextual association of pathway $i$ with pathway $j$. Similarly, the \texttt{pathway\_overlap} matrix  stores statistical significance of the overlapping genes between all pathway pairs in the form of a square matrix. This information is only based on the KEGG database and is not dependent on gene expression data. The hypergeometric test is used to estimate if the observed overlap is statistically significant. If \texttt{use\_sig\_pathways} parameter is set to \texttt{TRUE}, both contextual association and overlap analysis results are sorted in decreasing order of pathway enrichment. Otherwise, the pathways appear in alphabetical order of pathway names.
+
+% Verify with file
+% Contextual_association_result <- read.table("Contextual_association_between_pathways.txt", sep = "\t")
+% Contextual_association_result[1:4,1:2]
+<<Contextual results, eval = TRUE>>=
+# Show the first four rows and first two columns 
+# of the contextual association from the
+# demonstration
+results$conn_p_value[1:4, 1:2]
+
+# Show the first four rows and first two columns 
+# of the pathway overlap scores from the
+# demonstration
+results$pathway_overlap[1:4, 1:2]
+@
+
+\section{Reference}
+PathNet: A tool for pathway analysis using topological information.
+Dutta B, Wallqvist A, and Reifman J.
+Source Code for Biology and Medicine 2012 Sep 24;7(1):10.
+
+\end{document}
