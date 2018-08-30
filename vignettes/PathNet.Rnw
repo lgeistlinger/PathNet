@@ -47,9 +47,10 @@ The direct evidence, i.e., association of each gene with the disease, was calcul
 To install the PathNet packages, start R and enter:
 
 <<Install biocLite packages, eval = FALSE>>=
-source("http://bioconductor.org/biocLite.R")
-biocLite("PathNet")
-biocLite("PathNetData")
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+BiocManager::install("PathNet")
+BiocManager::install("PathNetData")
 @
 
 
