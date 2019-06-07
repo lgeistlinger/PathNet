@@ -1,7 +1,7 @@
 Package: PathNet
 Type: Package
 Title: An R package for pathway analysis using topological information
-Version: 1.25.0
+Version: 1.25.1
 Author: Bhaskar Dutta <bhaskar.dutta@gmail.com>, Anders Wallqvist
         <awallqvist@bhsai.org>, and Jaques Reifman <jreifman@bhsai.org>
 Maintainer: Jason B. Smith <jsmith@bhsai.org>
@@ -18,3 +18,4 @@ License: GPL-3
 Suggests: PathNetData, RUnit, BiocGenerics
 biocViews: Pathways, DifferentialExpression, MultipleComparison, KEGG,
         NetworkEnrichment, Network
+PackageStatus: Deprecated
