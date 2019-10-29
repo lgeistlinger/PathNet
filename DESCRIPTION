@@ -1,7 +1,7 @@
 Package: PathNet
 Type: Package
 Title: An R package for pathway analysis using topological information
-Version: 1.26.0
+Version: 1.27.0
 Author: Bhaskar Dutta <bhaskar.dutta@gmail.com>, Anders Wallqvist
         <awallqvist@bhsai.org>, and Jaques Reifman <jreifman@bhsai.org>
 Maintainer: Jason B. Smith <jsmith@bhsai.org>
