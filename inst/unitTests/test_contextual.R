@@ -68,31 +68,31 @@ test_construct.significant.pathways_nosig <- function() {
 }
 
 # Full test contextual analysis using signficant pathways
-test_contextual_with_sig_pathways <- function() {
-  evidence <- brain_regions[1:5000,]   # limit number of regions for speed
-  set.seed(123)
-
-  z <- PathNet(Enrichment_Analysis = TRUE,
-               Contextual_Analysis = TRUE,
-               DirectEvidence_info = evidence, 
-               Adjacency = A, 
-               pathway = pathway, 
-               Column_DirectEvidence = 7,
-               n_perm = 10, threshold = 0.05,
-               use_sig_pathways=TRUE)
-  
-  # Check p-values
-  cp <- z$conn_p_value
-  checkEquals(c(0.0, 0.0, 0.0, 0.2, 1.0), cp[2,1:5], checkNames=FALSE)
-  
-  # Pathway overlap
-  po <- z$pathway_overlap
-  idx <- 2
-  checkEquals('Acute myeloid leukemia', rownames(po)[idx])
-  checkEquals('Adherens junction', colnames(po)[1])
-  checkEquals( 0.0004628949, po[idx,1], tolerance=0.00001)
-  checkEquals( 0, po[idx,2])
-  checkEquals( 1.284468e-08, po[idx,3], tolerance=0.00001)
-  checkEquals( 3.291294e-12, po[idx,4], tolerance=0.00001)
-  checkEquals( 1, po[idx,5])
-}
+#test_contextual_with_sig_pathways <- function() {
+#  evidence <- brain_regions[1:5000,]   # limit number of regions for speed
+#  set.seed(123)
+#
+#  z <- PathNet(Enrichment_Analysis = TRUE,
+#               Contextual_Analysis = TRUE,
+#               DirectEvidence_info = evidence, 
+#               Adjacency = A, 
+#               pathway = pathway, 
+#               Column_DirectEvidence = 7,
+#               n_perm = 10, threshold = 0.05,
+#               use_sig_pathways=TRUE)
+#  
+#  # Check p-values
+#  cp <- z$conn_p_value
+#  checkEquals(c(0.0, 0.0, 0.0, 0.2, 1.0), cp[2,1:5], checkNames=FALSE)
+#  
+#  # Pathway overlap
+#  po <- z$pathway_overlap
+#  idx <- 2
+#  checkEquals('Acute myeloid leukemia', rownames(po)[idx])
+#  checkEquals('Adherens junction', colnames(po)[1])
+#  checkEquals( 0.0004628949, po[idx,1], tolerance=0.00001)
+#  checkEquals( 0, po[idx,2])
+#  checkEquals( 1.284468e-08, po[idx,3], tolerance=0.00001)
+#  checkEquals( 3.291294e-12, po[idx,4], tolerance=0.00001)
+#  checkEquals( 1, po[idx,5])
+#}
