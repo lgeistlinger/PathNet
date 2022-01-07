@@ -24,7 +24,7 @@ test_determine.common.path <- function() {
   DirectEvidence_path_common1 <- common_path_results$DirectEvidence_path_common1
   
   checkEquals(c(8647, 64241, 64240, 9429), path_genes1[1:4])
-  checkEquals(c(1080, 6833, 6891, 6890), path_genes_common1)
+  checkEquals(c(1080, 6833, 6891, 6890), as.integer(path_genes_common1))
 }
 
 # Tests main contextual analysis operation WITHOUT enrichment analysis
