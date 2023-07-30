@@ -1,10 +1,10 @@
 Package: PathNet
 Type: Package
 Title: An R package for pathway analysis using topological information
-Version: 1.40.0
+Version: 1.40.1
 Author: Bhaskar Dutta <bhaskar.dutta@gmail.com>, Anders Wallqvist
         <awallqvist@bhsai.org>, and Jaques Reifman <jreifman@bhsai.org>
-Maintainer: Ludwig Geistlinger <Ludwig_Geistlinger@hms.harvard.edu>
+Maintainer: Ludwig Geistlinger <ludwig.geistlinger@gmail.com>
 Description: PathNet uses topological information present in pathways
         and differential expression levels of genes (obtained from
         microarray experiment) to identify pathways that are 1)
